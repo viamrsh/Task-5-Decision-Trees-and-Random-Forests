@@ -1,0 +1,67 @@
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn import tree
+import seaborn as sns
+from io import StringIO
+import graphviz
+
+# Load the dataset
+df = pd.read_csv('/content/drive/MyDrive/heart.csv')
+
+# Split into features and target
+X = df.drop('target', axis=1)
+y = df['target']
+
+# Train-Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train Decision Tree
+dt = DecisionTreeClassifier(random_state=42, max_depth=4)
+dt.fit(X_train, y_train)
+
+# Visualize the Decision Tree
+plt.figure(figsize=(20,10))
+tree.plot_tree(dt, feature_names=X.columns, class_names=['No Disease', 'Disease'], filled=True)
+plt.title("Decision Tree (max_depth=4)")
+plt.show()
+
+# Evaluate Decision Tree
+y_pred_dt = dt.predict(X_test)
+print("Decision Tree Accuracy:", accuracy_score(y_test, y_pred_dt))
+print("\nClassification Report:\n", classification_report(y_test, y_pred_dt))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_dt))
+
+# Train Random Forest
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
+
+# Evaluate Random Forest
+y_pred_rf = rf.predict(X_test)
+print("\nRandom Forest Accuracy:", accuracy_score(y_test, y_pred_rf))
+print("\nClassification Report:\n", classification_report(y_test, y_pred_rf))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred_rf))
+
+# Feature Importances
+importances = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
+plt.figure(figsize=(10,6))
+sns.barplot(x=importances, y=importances.index)
+plt.title("Feature Importances - Random Forest")
+plt.xlabel("Importance")
+plt.ylabel("Features")
+plt.show()
+
+# Cross-Validation
+cv_dt = cross_val_score(dt, X, y, cv=5)
+cv_rf = cross_val_score(rf, X, y, cv=5)
+
+print("\nCross-Validation Accuracy (Decision Tree):", np.mean(cv_dt))
+print("Cross-Validation Accuracy (Random Forest):", np.mean(cv_rf))
